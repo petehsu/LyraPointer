@@ -30,6 +30,8 @@ class ScreenManager:
         self,
         control_zone: Optional[dict] = None,
         sensitivity: float = 1.5,
+        flip_x: bool = True,
+        flip_y: bool = False,
     ):
         """
         初始化屏幕管理器
@@ -37,8 +39,12 @@ class ScreenManager:
         Args:
             control_zone: 控制区域 (x_min, x_max, y_min, y_max)
             sensitivity: 灵敏度倍数
+            flip_x: 是否水平翻转
+            flip_y: 是否垂直翻转
         """
         self.sensitivity = sensitivity
+        self.flip_x = flip_x
+        self.flip_y = flip_y
         self.control_zone = control_zone or {
             "x_min": 0.15,
             "x_max": 0.85,
@@ -153,8 +159,12 @@ class ScreenManager:
         if use_zone:
             x, y = self.normalize_to_zone(x, y)
         
-        # 摄像头是镜像的，需要翻转 x
-        x = 1.0 - x
+        # 根据设置进行翻转
+        if self.flip_x:
+            x = 1.0 - x
+            
+        if self.flip_y:
+            y = 1.0 - y
         
         screen = self.primary_screen
         px = int(screen.x + x * screen.width)

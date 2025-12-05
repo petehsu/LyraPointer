@@ -119,7 +119,10 @@ class Visualizer:
                 color=self.COLOR_GREEN,
             )
         
-        # 5. 绘制暂停状态
+        # 5. 绘制设置按钮 (右上角)
+        self._draw_settings_button(display)
+        
+        # 6. 绘制暂停状态
         if self._is_paused:
             self._draw_text(
                 display,
@@ -132,6 +135,43 @@ class Visualizer:
         
         return display
     
+    def _draw_settings_button(self, frame: np.ndarray):
+        """绘制设置按钮"""
+        h, w = frame.shape[:2]
+        # 齿轮图标位置 (右上角)
+        center = (w - 30, 30)
+        radius = 15
+        
+        # 简单的齿轮形状
+        cv2.circle(frame, center, radius, self.COLOR_GRAY, -1)
+        cv2.circle(frame, center, radius - 5, self.COLOR_DARK, 2)
+        cv2.putText(frame, "S", (center[0] - 6, center[1] + 6),
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.6, self.COLOR_WHITE, 2)
+
+    def check_click(self, x: int, y: int, frame_width: int) -> str:
+        """
+        检查点击位置
+        
+        Args:
+            x: 点击 x 坐标
+            y: 点击 y 坐标
+            frame_width: 画面宽度
+            
+        Returns:
+            点击的元素名称，如果没有则返回 None
+        """
+        # 检查设置按钮 (右上角 30,30 半径 20)
+        btn_x, btn_y = frame_width - 30, 30
+        dist = ((x - btn_x) ** 2 + (y - btn_y) ** 2) ** 0.5
+        if dist < 20:
+            return "settings"
+        return None
+    
+    def set_mouse_callback(self, callback):
+        """设置鼠标回调"""
+        cv2.namedWindow(self.WINDOW_NAME)
+        cv2.setMouseCallback(self.WINDOW_NAME, callback)
+
     def show(self, frame: np.ndarray) -> int:
         """
         显示画面

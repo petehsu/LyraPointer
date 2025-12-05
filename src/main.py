@@ -15,7 +15,7 @@ from .config import Settings
 from .control import MouseController, ScreenManager
 from .gestures import GestureDetector, Gesture, GestureType
 from .tracker import HandTracker, Smoother
-from .ui import Visualizer, SystemTray
+from .ui import Visualizer, SystemTray, SettingsWindow
 
 
 class LyraPointer:
@@ -53,10 +53,14 @@ class LyraPointer:
         
         # 轨迹平滑器
         smoothing = self.settings.smoothing
-        # 将 smoothing (0-1) 转换为 One Euro Filter 参数
-        # smoothing 越高 -> min_cutoff 越低 (更平滑)
-        min_cutoff = 1.0 + (1.0 - smoothing) * 3.0
-        beta = 0.005 + smoothing * 0.01
+        # 调整 One Euro Filter 参数以获得更丝滑的体验
+        # min_cutoff: 越小越平滑，延迟越高 (0.01 - 1.0)
+        # beta: 速度系数，越小高速时越平滑 (0.0 - 1.0)
+        
+        # 之前的参数可能导致抖动，现在调得更"重"一些
+        min_cutoff = 0.05 + (1.0 - smoothing) * 0.5  # 范围 0.05 - 0.55
+        beta = 0.001 + smoothing * 0.01              # 范围 0.001 - 0.011
+        
         self.smoother = Smoother(min_cutoff=min_cutoff, beta=beta)
         
         # 手势检测器
@@ -81,6 +85,14 @@ class LyraPointer:
             show_gesture_info=True,
             show_control_zone=True,
             show_fps=self.settings.show_fps,
+        )
+        self.visualizer.set_mouse_callback(self._on_mouse_click)
+        
+        # 设置窗口
+        self.settings_window = SettingsWindow(
+            settings=self.settings,
+            on_save=self._on_settings_save,
+            on_close=self._on_settings_close,
         )
         
         # 系统托盘
@@ -334,6 +346,54 @@ class LyraPointer:
             self.visualizer.destroy_window()
         else:
             self.visualizer.create_window()
+    
+    def _on_mouse_click(self, event, x, y, flags, param):
+        """鼠标点击回调"""
+        if event == cv2.EVENT_LBUTTONDOWN:
+            # 检查点击了什么
+            target = self.visualizer.check_click(x, y, self.settings.camera_width)
+            
+            if target == "settings":
+                self._open_settings()
+    
+    def _open_settings(self):
+        """打开设置窗口"""
+        # 暂停处理以避免冲突
+        was_paused = self._is_paused
+        self._is_paused = True
+        self.visualizer.set_paused(True)
+        
+        # 在主线程中显示（注意：OpenCV 的 waitKey 可能会阻塞 Tkinter，这里简单处理）
+        # 更好的方式是使用多线程，但为保持简单，我们暂时阻塞主循环
+        print("Opening settings...")
+        self.settings_window.show()
+        
+        # 恢复状态
+        if not was_paused:
+            self._is_paused = False
+            self.visualizer.set_paused(False)
+    
+    def _on_settings_save(self):
+        """设置保存回调"""
+        print("Settings saved, reloading...")
+        # 重新应用设置
+        self.screen.sensitivity = self.settings.sensitivity
+        self.screen.flip_x = self.settings.flip_x
+        self.screen.flip_y = self.settings.flip_y
+        
+        self.visualizer.show_skeleton = self.settings.show_skeleton
+        self.visualizer.show_fps = self.settings.show_fps
+        
+        # 更新平滑参数
+        smoothing = self.settings.smoothing
+        min_cutoff = 0.05 + (1.0 - smoothing) * 0.5
+        beta = 0.001 + smoothing * 0.01
+        self.smoother.min_cutoff = min_cutoff
+        self.smoother.beta = beta
+        
+    def _on_settings_close(self):
+        """设置关闭回调"""
+        pass
     
     def _on_show_window(self):
         """显示窗口回调"""

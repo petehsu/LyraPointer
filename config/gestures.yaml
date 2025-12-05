@@ -70,7 +70,7 @@ settings:
   sensitivity: 1.5
   
   # 平滑系数 (0-1, 越高越平滑但延迟越大)
-  smoothing: 0.7
+  smoothing: 0.8
   
   # 双击间隔 (毫秒)
   double_click_interval: 300

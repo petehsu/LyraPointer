@@ -87,6 +87,8 @@ DEFAULT_CONFIG = {
             "width": 640,
             "height": 480,
             "fps": 30,
+            "flip_x": True,  # 水平镜像
+            "flip_y": False, # 垂直镜像
         },
         "performance": {
             "process_interval": 1,

@@ -160,6 +160,22 @@ class Settings:
         return self.get("settings.camera.height", 480)
     
     @property
+    def flip_x(self) -> bool:
+        return self.get("settings.camera.flip_x", True)
+    
+    @flip_x.setter
+    def flip_x(self, value: bool):
+        self.set("settings.camera.flip_x", value)
+        
+    @property
+    def flip_y(self) -> bool:
+        return self.get("settings.camera.flip_y", False)
+    
+    @flip_y.setter
+    def flip_y(self, value: bool):
+        self.set("settings.camera.flip_y", value)
+    
+    @property
     def model_complexity(self) -> int:
         return self.get("settings.performance.model_complexity", 0)
     
