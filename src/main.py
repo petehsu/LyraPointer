@@ -15,6 +15,7 @@ import cv2
 
 from .config import Settings
 from .control import MouseController, ScreenManager
+from .control.wayland_mouse import WaylandMouseController, is_wayland
 from .gestures import Gesture, GestureDetector, GestureType
 from .tracker import HandTracker, Smoother
 from .ui import SettingsWindow, SystemTray, Visualizer
@@ -86,11 +87,12 @@ class LyraPointer:
         smoothing = self.settings.smoothing
         self.smoother = Smoother(smoothing=smoothing)
 
-        # 手势检测器
+        # 手势检测器（使用优化后的参数）
         self.detector = GestureDetector(
-            pinch_threshold=0.05,
-            click_hold_frames=3,
-            double_click_interval=0.3,
+            pinch_threshold=0.07,  # 增大阈值，更容易触发
+            pinch_release_threshold=0.10,  # 释放阈值
+            click_hold_frames=2,
+            double_click_interval=0.4,
         )
 
         # 屏幕管理器
@@ -99,8 +101,21 @@ class LyraPointer:
             sensitivity=self.settings.sensitivity,
         )
 
-        # 鼠标控制器
-        self.mouse = MouseController()
+        # 鼠标控制器 - 自动选择适合当前环境的控制器
+        self._is_wayland = is_wayland()
+        if self._is_wayland:
+            wayland_mouse = WaylandMouseController()
+            if wayland_mouse.available:
+                self.mouse = wayland_mouse
+                print("✅ 使用 ydotool 控制鼠标 (Wayland)")
+            else:
+                self.mouse = MouseController()
+                print("⚠️ ydotool 不可用，鼠标控制可能无法工作")
+                print("   安装方法: sudo pacman -S ydotool")
+                print("   启动服务: sudo systemctl enable --now ydotool")
+        else:
+            self.mouse = MouseController()
+            print("✅ 使用 PyAutoGUI 控制鼠标 (X11)")
 
         # 可视化器
         self.visualizer = Visualizer(
