@@ -1,0 +1,19 @@
+# Core dependencies
+opencv-python>=4.8.0
+mediapipe>=0.10.0
+pyautogui>=0.9.54
+pynput>=1.7.6
+
+# UI dependencies
+pystray>=0.19.0
+Pillow>=10.0.0
+
+# Configuration
+PyYAML>=6.0
+
+# Utilities
+numpy>=1.24.0
+screeninfo>=0.8.1
+
+# Note: MediaPipe requires Python 3.11 or 3.12
+# If using Python 3.13, please create a venv with Python 3.11/3.12

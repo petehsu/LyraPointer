@@ -1,0 +1,117 @@
+# LyraPointer 手势配置
+version: "1.0"
+
+# 手势定义
+gestures:
+  # 指针模式 - 食指伸出控制鼠标
+  pointer:
+    description: "指针模式 - 控制鼠标移动"
+    fingers:
+      index: true
+      middle: false
+      ring: false
+      pinky: false
+    action: "move_cursor"
+    
+  # 点击 - 拇指食指捏合
+  click:
+    description: "点击 - 拇指食指捏合"
+    type: "pinch"
+    fingers: ["thumb", "index"]
+    threshold: 0.05
+    action: "left_click"
+    hold_frames: 3  # 防误触
+    
+  # 右键 - 拇指中指捏合
+  right_click:
+    description: "右键 - 拇指中指捏合"
+    type: "pinch"
+    fingers: ["thumb", "middle"]
+    threshold: 0.05
+    action: "right_click"
+    hold_frames: 3
+    
+  # 滚动模式 - 食指中指伸出
+  scroll:
+    description: "滚动模式 - 上下移动滚动"
+    fingers:
+      index: true
+      middle: true
+      ring: false
+      pinky: false
+    action: "scroll_mode"
+    
+  # 暂停控制 - 五指张开
+  pause:
+    description: "暂停/恢复控制"
+    fingers:
+      thumb: true
+      index: true
+      middle: true
+      ring: true
+      pinky: true
+    action: "toggle_pause"
+    hold_frames: 10  # 需要保持一段时间
+    
+  # 握拳 - 休息状态
+  fist:
+    description: "休息状态 - 无操作"
+    fingers:
+      thumb: false
+      index: false
+      middle: false
+      ring: false
+      pinky: false
+    action: "none"
+
+# 控制参数
+settings:
+  # 鼠标灵敏度 (越高移动越快)
+  sensitivity: 1.5
+  
+  # 平滑系数 (0-1, 越高越平滑但延迟越大)
+  smoothing: 0.7
+  
+  # 双击间隔 (毫秒)
+  double_click_interval: 300
+  
+  # 滚动速度
+  scroll_speed: 5
+  
+  # 控制区域 (相对于摄像头画面, 0-1)
+  control_zone:
+    x_min: 0.15
+    x_max: 0.85
+    y_min: 0.15
+    y_max: 0.85
+  
+  # 摄像头设置
+  camera:
+    index: 0
+    width: 640
+    height: 480
+    fps: 30
+    
+  # 性能设置
+  performance:
+    # 处理间隔帧数 (1=每帧处理, 2=隔帧处理)
+    process_interval: 1
+    # MediaPipe 模型复杂度 (0=轻量, 1=完整)
+    model_complexity: 0
+    # 检测置信度
+    detection_confidence: 0.7
+    # 追踪置信度
+    tracking_confidence: 0.5
+
+# UI 设置
+ui:
+  # 显示可视化窗口
+  show_visualizer: true
+  # 显示手部骨架
+  show_skeleton: true
+  # 显示手势状态
+  show_gesture_info: true
+  # 显示控制区域
+  show_control_zone: true
+  # 显示 FPS
+  show_fps: true
