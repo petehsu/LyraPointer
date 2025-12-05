@@ -468,12 +468,12 @@ class LyraPointer:
         self.visualizer.show_skeleton = self.settings.show_skeleton
         self.visualizer.show_fps = self.settings.show_fps
 
-        # 更新平滑参数
+        # 更新平滑参数 - 使用新的 set_smoothing 方法
         smoothing = self.settings.smoothing
-        min_cutoff = 0.05 + (1.0 - smoothing) * 0.5
-        beta = 0.001 + smoothing * 0.01
-        self.smoother.min_cutoff = min_cutoff
-        self.smoother.beta = beta
+        self.smoother.set_smoothing(smoothing)
+        print(
+            f"Smoothing updated: {smoothing} -> min_cutoff={self.smoother.min_cutoff:.2f}, beta={self.smoother.beta:.2f}"
+        )
 
     def _on_settings_close(self):
         """设置关闭回调"""

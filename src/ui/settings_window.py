@@ -348,26 +348,65 @@ class SettingsWindow:
         )
         control_group.pack(fill="x", padx=10, pady=8)
 
+        # 平滑预设选择
+        preset_frame = ttk.Frame(control_group, style="Tab.TFrame")
+        preset_frame.pack(fill="x", pady=(0, 10))
+
+        ttk.Label(preset_frame, text="Smoothing Preset:").pack(
+            side="left", padx=(0, 10)
+        )
+
+        preset_options = [
+            "🚀 Responsive (Most responsive)",
+            "⚖️ Balanced (Recommended)",
+            "🎯 Stable (Smoothest)",
+            "⚙️ Custom",
+        ]
+
+        # 根据当前平滑值确定预设
+        current_smoothing = self.settings.smoothing
+        if current_smoothing < 0.25:
+            current_preset_idx = 0
+        elif current_smoothing < 0.6:
+            current_preset_idx = 1
+        elif current_smoothing < 0.85:
+            current_preset_idx = 2
+        else:
+            current_preset_idx = 3
+
+        self.vars["smoothing_preset"] = tk.StringVar(
+            value=preset_options[current_preset_idx]
+        )
+        preset_combo = ttk.Combobox(
+            preset_frame,
+            textvariable=self.vars["smoothing_preset"],
+            values=preset_options,
+            state="readonly",
+            width=30,
+        )
+        preset_combo.pack(side="left", fill="x", expand=True)
+        preset_combo.bind("<<ComboboxSelected>>", self._on_preset_change)
+
         # 灵敏度
         self._create_slider(
             control_group,
             t("settings.sensitivity"),
             "sensitivity",
-            0.1,
-            5.0,
+            0.5,
+            3.0,
             self.settings.sensitivity,
             "Lower = slower cursor, Higher = faster cursor",
         )
 
-        # 平滑度
+        # 平滑度（自定义模式下可调）
         self._create_slider(
             control_group,
             t("settings.smoothing"),
             "smoothing",
             0.0,
-            0.99,
+            0.95,
             self.settings.smoothing,
-            "Higher = smoother but more latency",
+            "0 = Most responsive, 1 = Smoothest (more delay)",
         )
 
         # 滚动速度
@@ -603,6 +642,25 @@ class SettingsWindow:
             command=self._on_close,
         )
         cancel_btn.pack(side="right")
+
+    def _on_preset_change(self, event):
+        """平滑预设变化"""
+        selection = self.vars["smoothing_preset"].get()
+
+        # 根据预设设置平滑值
+        if "Responsive" in selection:
+            smoothing_value = 0.15
+        elif "Balanced" in selection:
+            smoothing_value = 0.45
+        elif "Stable" in selection:
+            smoothing_value = 0.75
+        else:
+            # Custom - 不改变当前值
+            return
+
+        # 更新滑块值
+        if "smoothing" in self.vars:
+            self.vars["smoothing"].set(smoothing_value)
 
     def _on_language_change(self, event):
         """语言选择变化"""

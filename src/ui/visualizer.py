@@ -108,6 +108,11 @@ class Visualizer:
         # 动画状态
         self._pulse_phase = 0.0
 
+        # 教程模式
+        self._show_tutorial = True  # 首次启动显示教程
+        self._tutorial_step = 0
+        self._help_btn_rect: Optional[Tuple[int, int, int, int]] = None
+
     def create_window(self):
         """创建窗口"""
         if not self._window_created:
@@ -175,6 +180,10 @@ class Visualizer:
         # 5. 暂停覆盖
         if self._is_paused:
             display = self._draw_pause_overlay(display)
+
+        # 6. 新手教程覆盖
+        if self._show_tutorial:
+            display = self._draw_tutorial_overlay(display)
 
         return display
 
@@ -508,6 +517,9 @@ class Visualizer:
                 thickness=2,
             )
 
+        # 帮助按钮
+        self._help_btn_rect = self._draw_help_button(frame, w)
+
         # 设置按钮
         self._settings_btn_rect = self._draw_settings_button(frame, w)
 
@@ -580,6 +592,47 @@ class Visualizer:
             x2 = int(center_x + 11 * math.cos(angle))
             y2 = int(center_y + 11 * math.sin(angle))
             cv2.line(frame, (x1, y1), (x2, y2), gear_color, 3, cv2.LINE_AA)
+
+        return (btn_x, btn_y, btn_x + btn_size, btn_y + btn_size)
+
+    def _draw_help_button(
+        self, frame: np.ndarray, frame_width: int
+    ) -> Tuple[int, int, int, int]:
+        """绘制帮助按钮"""
+        btn_size = 32
+        btn_x = frame_width - btn_size * 2 - 20  # 在设置按钮左边
+        btn_y = 8
+        center_x = btn_x + btn_size // 2
+        center_y = btn_y + btn_size // 2
+
+        # 按钮背景
+        self._draw_rounded_rect(
+            frame,
+            (btn_x, btn_y),
+            (btn_x + btn_size, btn_y + btn_size),
+            self.COLORS["bg_light"],
+            radius=8,
+        )
+
+        # 边框
+        self._draw_rounded_rect(
+            frame,
+            (btn_x, btn_y),
+            (btn_x + btn_size, btn_y + btn_size),
+            self.COLORS["border"],
+            radius=8,
+            thickness=1,
+        )
+
+        # 问号图标
+        self._draw_text(
+            frame,
+            "?",
+            (center_x - 5, center_y + 6),
+            font_scale=0.7,
+            color=self.COLORS["text_secondary"],
+            thickness=2,
+        )
 
         return (btn_x, btn_y, btn_x + btn_size, btn_y + btn_size)
 
@@ -882,6 +935,121 @@ class Visualizer:
 
         return frame
 
+    def _draw_tutorial_overlay(self, frame: np.ndarray) -> np.ndarray:
+        """绘制新手教程覆盖层"""
+        h, w = frame.shape[:2]
+
+        # 半透明背景
+        overlay = frame.copy()
+        cv2.rectangle(overlay, (0, 0), (w, h), self.COLORS["bg_dark"], -1)
+        cv2.addWeighted(overlay, 0.85, frame, 0.15, 0, frame)
+
+        # 教程面板
+        panel_w, panel_h = min(500, w - 40), min(400, h - 40)
+        panel_x = (w - panel_w) // 2
+        panel_y = (h - panel_h) // 2
+
+        # 面板背景
+        self._draw_glass_panel(
+            frame,
+            (panel_x, panel_y),
+            (panel_x + panel_w, panel_y + panel_h),
+            alpha=0.95,
+            radius=16,
+        )
+
+        # 边框
+        self._draw_rounded_rect(
+            frame,
+            (panel_x, panel_y),
+            (panel_x + panel_w, panel_y + panel_h),
+            self.COLORS["primary"],
+            radius=16,
+            thickness=2,
+        )
+
+        # 标题
+        title = "Welcome to LyraPointer"
+        self._draw_text(
+            frame,
+            title,
+            (panel_x + 20, panel_y + 40),
+            font_scale=0.8,
+            color=self.COLORS["text_primary"],
+            thickness=2,
+        )
+
+        # 手势说明
+        gestures = [
+            ("☝️", "Index finger up", "Move cursor"),
+            ("👌", "Pinch (index+thumb)", "Left click"),
+            ("✌️", "Two fingers pinch", "Right click"),
+            ("🤏", "Pinch and hold", "Drag"),
+            ("✌️↕", "Two fingers up/down", "Scroll"),
+            ("🖐️", "Open palm", "Pause control"),
+            ("✊", "Fist", "Stop / Reset"),
+        ]
+
+        y_offset = panel_y + 80
+        for emoji, gesture, action in gestures:
+            # 手势
+            self._draw_text(
+                frame,
+                f"{gesture}",
+                (panel_x + 30, y_offset),
+                font_scale=0.5,
+                color=self.COLORS["warning"],
+            )
+            # 动作
+            self._draw_text(
+                frame,
+                f"→ {action}",
+                (panel_x + 200, y_offset),
+                font_scale=0.5,
+                color=self.COLORS["text_secondary"],
+            )
+            y_offset += 35
+
+        # 快捷键提示
+        y_offset += 15
+        cv2.line(
+            frame,
+            (panel_x + 20, y_offset),
+            (panel_x + panel_w - 20, y_offset),
+            self.COLORS["divider"],
+            1,
+        )
+        y_offset += 25
+
+        shortcuts = [
+            ("P", "Pause/Resume"),
+            ("Q", "Quit"),
+            ("V", "Show/Hide window"),
+        ]
+
+        for key, desc in shortcuts:
+            self._draw_text(
+                frame,
+                f"[{key}] {desc}",
+                (panel_x + 30, y_offset),
+                font_scale=0.45,
+                color=self.COLORS["text_muted"],
+            )
+            y_offset += 28
+
+        # 关闭按钮
+        close_text = "Click anywhere or press any key to start"
+        text_w = len(close_text) * 8
+        self._draw_text(
+            frame,
+            close_text,
+            (panel_x + (panel_w - text_w) // 2, panel_y + panel_h - 25),
+            font_scale=0.45,
+            color=self.COLORS["primary_light"],
+        )
+
+        return frame
+
     def _get_gesture_text(self, gesture_type: GestureType) -> str:
         """获取手势的本地化文本"""
         gesture_keys = {
@@ -956,11 +1124,33 @@ class Visualizer:
 
     def check_click(self, x: int, y: int, frame_width: int) -> Optional[str]:
         """检查点击位置"""
+        # 如果教程显示中，任意点击关闭教程
+        if self._show_tutorial:
+            self._show_tutorial = False
+            return "close_tutorial"
+
+        # 检查帮助按钮
+        if hasattr(self, "_help_btn_rect") and self._help_btn_rect:
+            bx1, by1, bx2, by2 = self._help_btn_rect
+            if bx1 <= x <= bx2 and by1 <= y <= by2:
+                self._show_tutorial = True
+                return "help"
+
+        # 检查设置按钮
         if hasattr(self, "_settings_btn_rect") and self._settings_btn_rect:
             bx1, by1, bx2, by2 = self._settings_btn_rect
             if bx1 <= x <= bx2 and by1 <= y <= by2:
                 return "settings"
+
         return None
+
+    def close_tutorial(self):
+        """关闭教程"""
+        self._show_tutorial = False
+
+    def show_tutorial(self):
+        """显示教程"""
+        self._show_tutorial = True
 
 
 class FPSCounter:
