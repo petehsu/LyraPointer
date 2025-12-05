@@ -324,45 +324,52 @@ class LyraPointer:
         # 指针模式 - 移动鼠标
         if gesture_type == GestureType.POINTER:
             if self._is_dragging:
-                # 拖拽模式下继续移动
                 self.mouse.move_to(x, y)
             else:
                 self.mouse.move_to(x, y)
 
-        # 点击
+        # 点击 - 在首次检测到时触发
         elif gesture_type == GestureType.CLICK:
-            # 只在手势开始时点击（防止连续触发）
-            if (
-                self._last_gesture is None
-                or self._last_gesture.type != GestureType.CLICK
-            ):
-                if gesture.frames >= 3:  # 需要保持几帧
-                    self.mouse.move_to(x, y)
-                    self.mouse.click()
+            # 移动到位置
+            self.mouse.move_to(x, y)
+            # 首次进入点击状态时触发点击
+            if self._last_gesture is None or self._last_gesture.type not in [
+                GestureType.CLICK,
+                GestureType.CLICK_HOLD,
+            ]:
+                self.mouse.click()
+                print(f"[Gesture] Click at ({x}, {y})")
 
         # 双击
         elif gesture_type == GestureType.DOUBLE_CLICK:
             self.mouse.move_to(x, y)
-            self.mouse.double_click()
+            # 只在首次检测到双击时触发
+            if (
+                self._last_gesture is None
+                or self._last_gesture.type != GestureType.DOUBLE_CLICK
+            ):
+                self.mouse.double_click()
+                print(f"[Gesture] Double click at ({x}, {y})")
 
-        # 拖拽开始
+        # 拖拽
         elif gesture_type == GestureType.CLICK_HOLD:
             if not self._is_dragging:
                 self.mouse.move_to(x, y)
                 self.mouse.mouse_down()
                 self._is_dragging = True
+                print(f"[Gesture] Drag start at ({x}, {y})")
             else:
                 self.mouse.move_to(x, y)
 
-        # 右键
+        # 右键 - 首次检测到时触发
         elif gesture_type == GestureType.RIGHT_CLICK:
+            self.mouse.move_to(x, y)
             if (
                 self._last_gesture is None
                 or self._last_gesture.type != GestureType.RIGHT_CLICK
             ):
-                if gesture.frames >= 3:
-                    self.mouse.move_to(x, y)
-                    self.mouse.right_click()
+                self.mouse.right_click()
+                print(f"[Gesture] Right click at ({x}, {y})")
 
         # 滚动
         elif gesture_type == GestureType.SCROLL_UP:
@@ -371,14 +378,16 @@ class LyraPointer:
         elif gesture_type == GestureType.SCROLL_DOWN:
             self.mouse.scroll_down(self.settings.scroll_speed)
 
-        # 暂停
+        # 暂停 - 需要保持一段时间
         elif gesture_type == GestureType.PALM:
-            if gesture.frames >= 10:  # 需要保持一段时间
+            if gesture.frames >= 8:
                 if (
                     self._last_gesture is None
                     or self._last_gesture.type != GestureType.PALM
+                    or self._last_gesture.frames < 8
                 ):
                     self._toggle_pause()
+                    print("[Gesture] Palm - toggle pause")
 
         # 停止拖拽（当手势变为非捏合状态）
         if self._is_dragging and gesture_type not in [
@@ -387,6 +396,7 @@ class LyraPointer:
         ]:
             self.mouse.mouse_up()
             self._is_dragging = False
+            print("[Gesture] Drag end")
 
         self._last_gesture = gesture
 
