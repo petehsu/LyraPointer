@@ -82,18 +82,9 @@ class LyraPointer:
         )
 
         # 轨迹平滑器
+        # smoothing: 0=最跟手, 1=最平滑
         smoothing = self.settings.smoothing
-        # 调整 One Euro Filter 参数以获得更丝滑的体验
-        # min_cutoff: 越小越平滑，延迟越高 (0.01 - 1.0)
-        # beta: 速度系数，越小高速时越平滑 (0.0 - 1.0)
-
-        # 优化的 One Euro Filter 参数
-        # min_cutoff: 越小越平滑，延迟越高
-        # beta: 速度系数，对快速移动更敏感
-        min_cutoff = 0.1 + (1.0 - smoothing) * 0.4  # 范围 0.1 - 0.5
-        beta = 0.005 + smoothing * 0.02  # 范围 0.005 - 0.025
-
-        self.smoother = Smoother(min_cutoff=min_cutoff, beta=beta)
+        self.smoother = Smoother(smoothing=smoothing)
 
         # 手势检测器
         self.detector = GestureDetector(
